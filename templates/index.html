@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>InternWay - Your Path to Internships</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+
+    <!-- Internal Styles -->
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+
+        .hero-section {
+            background: linear-gradient(to right, #4A90E2, #7D4AE2);
+            color: white;
+            padding: 80px 0;
+            text-align: center;
+        }
+        .hero-section h1 {
+            font-size: 3em;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+        .hero-section p {
+            font-size: 1.2em;
+            max-width: 700px;
+            margin: 0 auto 40px auto;
+        }
+        .hero-buttons .btn {
+            background-color: white;
+            color: #4A90E2;
+            padding: 12px 25px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            margin: 0 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .hero-buttons .btn:hover {
+            background-color: #e0e0e0;
+        }
+
+        .hidden { display: none !important; }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            width: 90%;
+            max-width: 500px;
+            position: relative;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .modal-content .close-button {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 1.5em;
+            cursor: pointer;
+            color: #888;
+        }
+        .modal-content .close-button:hover {
+            color: #333;
+        }
+        .modal-content h2 {
+            color: #4A90E2;
+            text-align: center;
+            margin-bottom: 25px;
+            font-size: 1.8em;
+        }
+
+        @media (max-width: 600px) {
+            .modal-content { margin: 20px; }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Top Navigation -->
+    <header>
+        <nav class="navbar">
+            <a href="#" class="logo" id="homeLink">InternWay</a>
+            <div class="nav-buttons" id="navButtons"></div>
+        </nav>
+    </header>
+
+    <main class="container">
+
+        <!-- Hero Section -->
+        <section id="auth-section" class="{% if user.user_id %}hidden{% endif %}">
+            <section class="hero-section">
+                <div class="container">
+                    <h1>Find Your Dream Internship, Or Your Next Great Hire.</h1>
+                    <p>Connecting talented individuals with exciting opportunities, and businesses with the perfect candidates.</p>
+                    <div class="hero-buttons">
+                        <button class="btn" id="heroSignupBtn">Join InternWay</button>
+                    </div>
+                </div>
+            </section>
+        </section>
+
+        <!-- Recruiter Dashboard -->
+        <section id="recruiter-section" class="dashboard-container {% if user.user_type != 'recruiter' or not user.user_id %}hidden{% endif %}">
+            <div class="dashboard-header">
+                <img src="{{ user.profile_image_url or 'https://placehold.co/80x80/4A90E2/FFFFFF?text=R' }}" alt="Profile Image" class="profile-image" id="recruiterProfileImage">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-800">Recruiter Dashboard</h1>
+                    <p class="text-gray-600">Welcome, <span id="recruiterUsername"></span>! Manage your job postings and find candidates.</p>
+                    <p class="text-sm text-gray-500 mt-1" id="recruiterBio"></p>
+                </div>
+            </div>
+
+            <div class="dashboard-content">
+                <!-- Job Posting Form -->
+                <section class="card">
+                    <h2>Post New Job</h2>
+                    <div id="postJobMessage" class="message-box"></div>
+                    <form id="postJobForm">
+                        <label for="job-title">Job Title</label>
+                        <input type="text" id="job-title" name="title" required>
+
+                        <label for="company-name">Company Name</label>
+                        <input type="text" id="company-name" name="company" required>
+
+                        <label for="job-location">Location</label>
+                        <input type="text" id="job-location" name="location" required>
+
+                        <label for="job-description">Job Description</label>
+                        <textarea id="job-description" name="description" required></textarea>
+
+                        <label for="job-salary">Salary (e.g., 3,50,000/year, Negotiable)</label>
+                        <input type="text" id="job-salary" name="salary">
+
+                        <button type="submit">Post Job</button>
+                    </form>
+                </section>
+
+                <!-- Posted Jobs -->
+                <section class="card">
+                    <h2>Your Posted Jobs</h2>
+                    <div id="recruiterJobList" class="job-list">
+                        <p>Loading your jobs...</p>
+                    </div>
+                </section>
+            </div>
+        </section>
+
+        <!-- Seeker Dashboard -->
+        <section id="seeker-section" class="dashboard-container {% if user.user_type != 'seeker' or not user.user_id %}hidden{% endif %}">
+            <div class="dashboard-header">
+                <img src="{{ user.profile_image_url or 'https://placehold.co/80x80/7D4AE2/FFFFFF?text=S' }}" alt="Profile Image" class="profile-image" id="seekerProfileImage">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-800">Seeker Dashboard</h1>
+                    <p class="text-gray-600">Welcome, <span id="seekerUsername"></span>! Browse and apply for your next great opportunity!</p>
+                    <p class="text-sm text-gray-500 mt-1" id="seekerBio"></p>
+                </div>
+            </div>
+
+            <div class="dashboard-content">
+                <!-- Job Search Section -->
+                <section class="card">
+                    <h2>Find Jobs</h2>
+                    <div class="job-search-filters">
+                        <input type="text" id="search-job-type" placeholder="Job Type (e.g., Frontend, Backend)">
+                        <input type="text" id="search-location" placeholder="Location">
+                        <select id="search-job-level">
+                            <option value="">Job Level</option>
+                            <option value="fresher">Fresher</option>
+                            <option value="junior">Junior</option>
+                            <option value="mid">Mid</option>
+                            <option value="senior">Senior</option>
+                        </select>
+                        <select id="search-employment-type">
+                            <option value="">Employment Type</option>
+                            <option value="full-time">Full-time</option>
+                            <option value="part-time">Part-time</option>
+                        </select>
+                        <button id="search-jobs-btn">Search Jobs</button>
+                    </div>
+                    <div id="applyJobMessage" class="message-box"></div>
+                    <div id="availableJobsList" class="job-list">
+                        <p>Loading available jobs...</p>
+                    </div>
+                </section>
+
+                <!-- Applied Jobs -->
+                <section class="card">
+                    <h2>Your Applied Jobs</h2>
+                    <div id="appliedJobsList" class="job-list">
+                        <p>Loading your applications...</p>
+                    </div>
+                </section>
+            </div>
+        </section>
+    </main>
+
+    <!-- Login Modal -->
+    <div id="loginModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <button class="close-button" onclick="closeModal('loginModal')">&times;</button>
+            <h2>Log In</h2>
+            <div id="loginMessage" class="message-box"></div>
+            <form id="loginForm">
+                <label for="login-username">Username</label>
+                <input type="text" id="login-username" name="username" required>
+
+                <label for="login-password">Password</label>
+                <input type="password" id="login-password" name="password" required>
+
+                <button type="submit">Log In</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Signup Modal -->
+    <div id="signupModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <button class="close-button" onclick="closeModal('signupModal')">&times;</button>
+            <h2>Sign Up</h2>
+            <div id="signupMessage" class="message-box"></div>
+            <form id="signupForm">
+                <label for="signup-username">Username</label>
+                <input type="text" id="signup-username" name="username" required>
+
+                <label for="signup-email">Email</label>
+                <input type="email" id="signup-email" name="email" required>
+
+                <label for="signup-password">Password</label>
+                <input type="password" id="signup-password" name="password" required>
+
+                <div class="radio-group">
+                    <input type="radio" id="user_type_seeker" name="user_type" value="seeker" checked>
+                    <label for="user_type_seeker">I'm a Seeker</label>
+
+                    <input type="radio" id="user_type_recruiter" name="user_type" value="recruiter">
+                    <label for="user_type_recruiter">I'm a Recruiter</label>
+                </div>
+
+                <button type="submit">Sign Up</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        const initialUserData = {{ user | tojson }};
+        function openModal(modalId) { document.getElementById(modalId).classList.remove('hidden'); }
+        function closeModal(modalId) { document.getElementById(modalId).classList.add('hidden'); }
+    </script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
