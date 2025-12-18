@@ -1,25 +1,28 @@
 import mysql.connector
 from mysql.connector import Error
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Database configuration
 DB_CONFIG = {
-    'host': os.environ.get('MYSQL_HOST', 'localhost'),
-    'user': os.environ.get('MYSQL_USER', 'root'),
-    'password': os.environ.get('MYSQL_PASSWORD', 'root'),
-    'database': os.environ.get('MYSQL_DATABASE', 'db_internway')
+    "host": os.getenv("MYSQL_HOST"),
+    "user": os.getenv("MYSQL_USER"),
+    "password": os.getenv("MYSQL_PASSWORD"),
+    "database": os.getenv("MYSQL_DATABASE"),
 }
+
 
 def get_db_connection():
     """Establishes and returns a database connection."""
     try:
         conn = mysql.connector.connect(**DB_CONFIG)
-        if conn.is_connected():
-            print("Connected to MySQL database")
-            return conn
+        return conn
     except Error as e:
         print(f"Connection error: {e}")
     return None
+
 
 def create_tables():
     """Creates required tables if they don't exist."""
@@ -29,7 +32,8 @@ def create_tables():
 
     cursor = conn.cursor()
     try:
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS users (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 username VARCHAR(255) NOT NULL UNIQUE,
@@ -40,9 +44,11 @@ def create_tables():
                 bio TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
-        """)
+        """
+        )
 
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS jobs (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 recruiter_id INT NOT NULL,
@@ -57,9 +63,11 @@ def create_tables():
                 posted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (recruiter_id) REFERENCES users(id) ON DELETE CASCADE
             )
-        """)
+        """
+        )
 
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS applications (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 job_id INT NOT NULL,
@@ -70,7 +78,8 @@ def create_tables():
                 FOREIGN KEY (seeker_id) REFERENCES users(id) ON DELETE CASCADE,
                 UNIQUE (job_id, seeker_id)
             )
-        """)
+        """
+        )
 
         conn.commit()
         print("All tables checked/created.")
@@ -79,6 +88,7 @@ def create_tables():
     finally:
         cursor.close()
         conn.close()
+
 
 def add_user(username, password, email, user_type, profile_image_url=None, bio=None):
     """Adds a new user to the database."""
@@ -92,7 +102,9 @@ def add_user(username, password, email, user_type, profile_image_url=None, bio=N
             INSERT INTO users (username, password, email, user_type, profile_image_url, bio)
             VALUES (%s, %s, %s, %s, %s, %s)
         """
-        cursor.execute(query, (username, password, email, user_type, profile_image_url, bio))
+        cursor.execute(
+            query, (username, password, email, user_type, profile_image_url, bio)
+        )
         conn.commit()
         print(f"User '{username}' added.")
         return True
@@ -102,6 +114,7 @@ def add_user(username, password, email, user_type, profile_image_url=None, bio=N
     finally:
         cursor.close()
         conn.close()
+
 
 def get_user_by_username(username):
     """Retrieves a user by username."""
@@ -121,7 +134,18 @@ def get_user_by_username(username):
         cursor.close()
         conn.close()
 
-def add_job(recruiter_id, title, company, location, description, salary, job_type=None, job_level=None, employment_type=None):
+
+def add_job(
+    recruiter_id,
+    title,
+    company,
+    location,
+    description,
+    salary,
+    job_type=None,
+    job_level=None,
+    employment_type=None,
+):
     """Adds a job posting."""
     conn = get_db_connection()
     if conn is None:
@@ -133,7 +157,20 @@ def add_job(recruiter_id, title, company, location, description, salary, job_typ
             INSERT INTO jobs (recruiter_id, title, company, location, description, salary, job_type, job_level, employment_type)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
-        cursor.execute(query, (recruiter_id, title, company, location, description, salary, job_type, job_level, employment_type))
+        cursor.execute(
+            query,
+            (
+                recruiter_id,
+                title,
+                company,
+                location,
+                description,
+                salary,
+                job_type,
+                job_level,
+                employment_type,
+            ),
+        )
         conn.commit()
         print(f"Job '{title}' posted by recruiter ID {recruiter_id}.")
         return True
@@ -144,7 +181,14 @@ def add_job(recruiter_id, title, company, location, description, salary, job_typ
         cursor.close()
         conn.close()
 
-def get_jobs(recruiter_id=None, job_type=None, location=None, job_level=None, employment_type=None):
+
+def get_jobs(
+    recruiter_id=None,
+    job_type=None,
+    location=None,
+    job_level=None,
+    employment_type=None,
+):
     """Retrieves jobs with optional filters."""
     conn = get_db_connection()
     if conn is None:
@@ -181,6 +225,7 @@ def get_jobs(recruiter_id=None, job_type=None, location=None, job_level=None, em
         cursor.close()
         conn.close()
 
+
 def apply_for_job(job_id, seeker_id):
     """Submits a job application."""
     conn = get_db_connection()
@@ -196,13 +241,16 @@ def apply_for_job(job_id, seeker_id):
         return True
     except Error as e:
         if e.errno == 1062:
-            print(f"Duplicate application: seeker {seeker_id} already applied for job {job_id}.")
+            print(
+                f"Duplicate application: seeker {seeker_id} already applied for job {job_id}."
+            )
             return False
         print(f"Apply job error: {e}")
         return False
     finally:
         cursor.close()
         conn.close()
+
 
 def get_applied_jobs(seeker_id):
     """Fetches jobs applied to by a specific seeker."""
@@ -228,5 +276,6 @@ def get_applied_jobs(seeker_id):
         cursor.close()
         conn.close()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     create_tables()
