@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>User Profile | InternWay</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Profile CSS -->
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='profile.css') }}"
+    />
+  </head>
+
+  <body>
+    <!-- Profile Container -->
+    <main class="container">
+      <div class="profile-card">
+        <!-- Profile Card Top Links -->
+        <div class="profile-card-nav">
+          <a href="/" class="card-link brand">InternWay</a>
+          <a href="/" class="card-link">Home</a>
+        </div>
+
+        <!-- Profile Header -->
+        <div class="profile-header">
+          <img
+            src="{{ user.profile_image_url or 'https://placehold.co/120x120?text=User' }}"
+            alt="Profile Photo"
+            class="profile-photo"
+          />
+
+          <div class="profile-info">
+            <div class="profile-name-row">
+              <h2>{{ user.username }}</h2>
+              <span
+                class="edit-icon"
+                onclick="toggleEditProfile()"
+                title="Edit Profile"
+                >✏️</span
+              >
+            </div>
+
+            <p class="email">{{ user.email }}</p>
+            <p class="bio">{{ user.bio or "No description added yet." }}</p>
+          </div>
+        </div>
+
+        <!-- Edit Profile Section (Hidden by default) -->
+        <div class="profile-section hidden" id="editProfileSection">
+          <h3>Edit Profile</h3>
+
+          <form
+            action="/api/update_profile"
+            method="POST"
+            class="edit-profile-form"
+          >
+            <label>Username</label>
+            <input
+              type="text"
+              name="username"
+              value="{{ user.username }}"
+              required
+            />
+
+            <label>Email</label>
+            <input
+              type="email"
+              name="email"
+              value="{{ user.email }}"
+              required
+            />
+
+            <label>Bio</label>
+            <textarea name="bio" rows="4">{{ user.bio }}</textarea>
+
+            <div class="edit-actions">
+              <button type="submit">Save Changes</button>
+              <button
+                type="button"
+                class="cancel-btn"
+                onclick="toggleEditProfile()"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Resume Section -->
+        {% if user.user_type=='seeker' %}
+        <div class="profile-section">
+          <h3>Resume</h3>
+
+          {% if request.args.get("resume")== "success" %}
+          <p id="resumeMessage" style="color: green; font-weight: 600">
+            Resume uploaded successfully
+          </p>
+          {%elif request.args.get("resume")=="invalid"%}
+          <p id="resumeMessage" style="color: red; font-weight: 600">
+            Invalid Resume
+          </p>
+          {%elif request.args.get("error")=="file_too_large"%}
+          <p id="resumeMessage" style="color: red; font-weight: 600">
+            File too large(Max 2MB)
+          </p>
+          {% endif %} {% if user.resume_url %}
+          <div class="resume-actions">
+            <a href="{{ user.resume_url }}" target="_blank" class="btn view">
+              View Resume
+            </a>
+            <a href="{{ user.resume_url }}" download class="btn download">
+              Download Resume
+            </a>
+          </div>
+          {% else %}
+          <p class="muted-text">No resume uploaded yet.</p>
+          {% endif %}
+
+          <!-- Upload Resume (Only for Seeker) -->
+          {% if user.user_type == 'seeker' %}
+          <form
+            action="/api/upload_resume"
+            method="POST"
+            enctype="multipart/form-data"
+            class="resume-form"
+          >
+            <input
+              type="file"
+              name="resume"
+              accept=".pdf,.doc,.docx"
+              required
+            />
+            <button type="submit" id="resumeUploadBtn">
+              Upload / Update Resume
+            </button>
+          </form>
+          {% endif %}
+        </div>
+        {% endif %}
+      </div>
+    </main>
+
+    <!-- JavaScript -->
+    <script>
+      function toggleEditProfile() {
+        const section = document.getElementById("editProfileSection");
+        section.classList.toggle("hidden");
+
+        if (!section.classList.contains("hidden")) {
+          section.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }
+
+      const msg = document.getElementById("resumeMessage");
+      if (msg) {
+        setTimeout(() => {
+          msg.style.opacity = "0";
+          msg.style.transition = "opacity 0.5s ease";
+          setTimeout(() => msg.remove(), 500);
+        }, 3000);
+      }
+
+      const resumeForm = document.querySelector(".resume-form");
+      const resumeBtn = document.getElementById("resumeUploadBtn");
+
+      if (resumeForm && resumeBtn) {
+        resumeForm.addEventListener("submit", () => {
+          resumeBtn.disabled = true;
+          resumeBtn.innerText = "Uploading...";
+          resumeBtn.style.opacity = 0.7;
+          resumeBtn.style.cursor = "not-allowed";
+        });
+      }
+    </script>
+  </body>
+</html>

@@ -51,6 +51,13 @@ document.addEventListener("DOMContentLoaded", () => {
       })`;
       navButtons.appendChild(welcomeSpan);
 
+      const profileButton = document.createElement("button");
+      profileButton.textContent = "Profile";
+      profileButton.addEventListener("click", () => {
+        window.location.href = "/profile";
+      });
+      navButtons.appendChild(profileButton);
+
       const logoutButton = document.createElement("button");
       logoutButton.textContent = "Logout";
       logoutButton.addEventListener("click", handleLogout);
@@ -269,6 +276,20 @@ document.addEventListener("DOMContentLoaded", () => {
                             <p><strong>Posted On:</strong> ${new Date(
                               job.posted_at
                             ).toLocaleDateString()}</p>
+
+                            <button style="
+                            margin-top:10px;
+                            padding:6px 12px;
+                            background:#4a90e2;
+                            color:white;
+                            border:none;
+                            border-radius:6px;
+                            cursor:pointer;"
+                            onclick="loadApplicants(${
+                              job.id
+                            },this)">Show Applicants</button>
+
+                            <div class="applicants-section"style="margin-top:10px;"></div>
                         `;
             jobListContainer.appendChild(jobDiv);
           });
@@ -452,3 +473,54 @@ document.addEventListener("DOMContentLoaded", () => {
 
   updateHeaderAndDisplaySections();
 });
+
+function loadApplicants(jobId, btn) {
+  const container = btn.nextElementSibling;
+
+  if (container.dataset.loaded === "true") {
+    if (container.classList.contains("hidden")) {
+      container.classList.remove("hidden");
+      btn.textContent = "Hide Applicants";
+    } else {
+      container.classList.add("hidden");
+      btn.textContent = "Show Applicants";
+    }
+    return;
+  }
+
+  btn.textContent = "Loading...";
+  container.innerHTML = "<p>Loading applicants...</p>";
+
+  fetch(`/api/job_applicants/${jobId}`, {
+    credentials: "same-origin",
+  })
+    .then((res) => res.json())
+    .then((data) => {
+      if (!data.applicants || data.applicants.length === 0) {
+        container.innerHTML = "<p>No applicants yet.</p>";
+      } else {
+        let html = "<h4>Applicants</h4>";
+
+        data.applicants.forEach((app) => {
+          html += `
+      <div style="padding:8px 0; border-bottom:1px solid #ddd;"><strong>${
+        app.username
+      }</strong><br>
+      <small>${app.email}</small><br>
+      ${
+        app.resume_url
+          ? `<a href="${app.resume_url}" target="_blank">View Resume</a>`
+          : `<span>No resume uploaded</span>`
+      }</div>
+      `;
+        });
+        container.innerHTML = html;
+      }
+
+      container.dataset.loaded = "true";
+      btn.textContent = "Hide Applicants";
+    })
+    .catch(() => {
+      container.innerHTML = "<p>Error loading applicants.</p>";
+    });
+}

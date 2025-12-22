@@ -42,6 +42,7 @@ def create_tables():
                 user_type ENUM('seeker', 'recruiter') NOT NULL,
                 profile_image_url VARCHAR(255),
                 bio TEXT,
+                resume_url VARCHAR(255),
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """
@@ -272,6 +273,65 @@ def get_applied_jobs(seeker_id):
     except Error as e:
         print(f"Get applied jobs error: {e}")
         return []
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def update_resume(user_id, resume_url):
+    """Updates resume URL for a user."""
+    conn = get_db_connection()
+    if conn is None:
+        return False
+
+    cursor = conn.cursor()
+    try:
+        query = "UPDATE users SET resume_url = %s WHERE id=%s"
+        cursor.execute(query, (resume_url, user_id))
+        conn.commit()
+        return True
+    except Error as e:
+        print(f"Update resume error: {e}")
+        return False
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def update_user_profile(user_id, username, email, bio):
+    conn = get_db_connection()
+    if conn is None:
+        return False
+
+    cursor = conn.cursor()
+    try:
+        query = """UPDATE users SET username = %s, email = %s, bio = %s WHERE id = %s"""
+        cursor.execute(query, (username, email, bio, user_id))
+        conn.commit()
+        return True
+    except Error as e:
+        print(f"Update profile error {e}")
+        return False
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def get_job_applicants(job_id):
+    conn = get_db_connection()
+    if conn is None:
+        return False
+
+    cursor = conn.cursor(dictionary=True)
+    try:
+        query = """
+        SELECT u.id,u.username,u.email,u.resume_url,a.status,a.application_date FROM applications a JOIN users u ON  a.seeker_id=u.id WHERE a.job_id = %s ORDER BY a.application_date DESC"""
+        cursor.execute(query, (job_id,))
+        return cursor.fetchall()
+    except Error as e:
+        print(f"Get applicants error: {e}")
+        return []
+
     finally:
         cursor.close()
         conn.close()

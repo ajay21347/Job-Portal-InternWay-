@@ -1,0 +1,237 @@
+/* ----------- Profile Page ----------- */
+
+body {
+  background: #edefd4;
+}
+
+/* Card */
+.profile-card {
+  position: relative;
+  max-width: 900px;
+  margin: 40px auto;
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+/* Top-right links inside card */
+.profile-card-nav {
+  position: absolute;
+  top: 18px;
+  right: 22px;
+  display: flex;
+  gap: 15px;
+}
+
+.card-link {
+  text-decoration: none;
+  font-weight: 600;
+  color: #ffffff;
+  opacity: 0.9;
+  font-size: 14px;
+}
+
+.card-link:hover {
+  opacity: 1;
+  text-decoration: underline;
+}
+
+/* FIXED selector */
+.card-link.brand {
+  font-weight: 700;
+  color: #ffffff;
+}
+
+/* Header */
+.profile-header {
+  display: flex;
+  gap: 30px;
+  align-items: center;
+  padding: 35px;
+  background: linear-gradient(135deg, #4a90e2, #7d4ae2);
+  color: white;
+}
+
+/* Avatar */
+.profile-photo {
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid #ffffff;
+}
+
+/* Name row with edit icon */
+.profile-name-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.edit-icon {
+  cursor: pointer;
+  font-size: 18px;
+  padding: 6px;
+  border-radius: 50%;
+  transition: background 0.2s ease;
+}
+
+.edit-icon:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Profile Info */
+.profile-info h2 {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 700;
+}
+
+.profile-info .email {
+  margin-top: 5px;
+  opacity: 0.9;
+  font-size: 15px;
+}
+
+.profile-info .bio {
+  margin-top: 12px;
+  font-size: 16px;
+  opacity: 0.95;
+}
+
+/* Sections */
+.profile-section {
+  padding: 30px 35px;
+}
+
+.profile-section h3 {
+  font-size: 22px;
+  margin-bottom: 15px;
+  color: #4a90e2;
+}
+
+/* Hidden utility */
+.hidden {
+  display: none !important;
+}
+
+/* Edit Profile Form */
+.edit-profile-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 500px;
+}
+
+.edit-profile-form label {
+  font-weight: 600;
+  color: #333;
+}
+
+.edit-profile-form input,
+.edit-profile-form textarea {
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  font-size: 15px;
+}
+
+.edit-profile-form textarea {
+  resize: vertical;
+}
+
+.edit-profile-form button {
+  margin-top: 10px;
+  align-self: flex-start;
+  background: linear-gradient(135deg, #4a90e2, #7d4ae2);
+  color: white;
+  padding: 10px 22px;
+  border-radius: 8px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.edit-profile-form button:hover {
+  opacity: 0.9;
+}
+
+/* Resume section */
+.resume-actions {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.btn {
+  padding: 12px 22px;
+  border-radius: 8px;
+  font-weight: 600;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.25s ease;
+}
+
+.btn.view {
+  background: #4a90e2;
+  color: #fff;
+}
+
+.btn.view:hover {
+  background: #367acc;
+}
+
+.btn.download {
+  background: #28a745;
+  color: #fff;
+}
+
+.btn.download:hover {
+  background: #218838;
+}
+
+/* Resume upload */
+.resume-form {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.resume-form input[type="file"] {
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: #fafafa;
+}
+
+.resume-form button {
+  background: linear-gradient(135deg, #4a90e2, #7d4ae2);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.resume-form button:hover {
+  opacity: 0.9;
+}
+
+/* Empty text */
+.muted-text {
+  color: #777;
+  font-size: 15px;
+}
+
+/* Mobile */
+@media (max-width: 600px) {
+  .profile-header {
+    flex-direction: column;
+    text-align: center;
+  }
+}

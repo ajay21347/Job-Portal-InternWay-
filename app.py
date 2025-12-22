@@ -1,11 +1,19 @@
-from flask import Flask, render_template, request, session, jsonify
+from flask import Flask, render_template, request, session, jsonify, redirect
+from werkzeug.utils import secure_filename
 import database
 import os
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "root123")
 
+
 database.create_tables()
+app.config["MAX_CONTENT_LENGTH"] = 2 * 1024 * 1024  # 2 MB
+
+
+@app.errorhandler(413)
+def file_too_large(error):
+    return redirect("/profile?error=file_too_large")
 
 
 @app.route("/")
@@ -51,6 +59,8 @@ def api_login():
         session["user_type"] = user["user_type"]
         session["profile_image_url"] = user["profile_image_url"]
         session["bio"] = user["bio"]
+        session["email"] = user["email"]
+        session["resume_url"] = user.get("resume_url")
         return jsonify(
             {
                 "success": True,
@@ -169,6 +179,106 @@ def api_get_seeker_applications():
         )
     applications = database.get_applied_jobs(session["user_id"])
     return jsonify({"success": True, "applications": applications})
+
+
+@app.route("/profile")
+def profile():
+    if not session.get("user_id"):
+        return redirect("/")
+    return render_template(
+        "profile.html",
+        user={
+            "user_id": session.get("user_id"),
+            "username": session.get("username"),
+            "email": session.get("email"),
+            "bio": session.get("bio"),
+            "profile_image_url": session.get("profile_image_url"),
+            "resume_url": session.get("resume_url"),
+            "user_type": session.get("user_type"),
+        },
+    )
+
+
+@app.route("/api/update_profile", methods=["POST"])
+def update_profile():
+    if "user_id" not in session:
+        return redirect("/")
+
+    username = request.form["username"]
+    email = request.form["email"]
+    bio = request.form.get("bio", "")
+
+    if database.update_user_profile(session["user_id"], username, email, bio):
+        # Update session values
+        session["username"] = username
+        session["email"] = email
+        session["bio"] = bio
+
+    return redirect("/profile")
+
+
+@app.route("/api/upload_resume", methods=["POST"])
+def upload_resume():
+    if "user_id" not in session:
+        return redirect("/")
+
+    if "resume" not in request.files:
+        return redirect("/profile")
+
+    file = request.files["resume"]
+
+    if file.filename == "":
+        return redirect("/profile")
+
+    # Allowed file types
+    allowed_extensions = {"pdf", "doc", "docx"}
+    filename = secure_filename(file.filename)
+    ext = filename.rsplit(".", 1)[-1].lower()
+
+    if ext not in allowed_extensions:
+        return redirect("/profile")
+
+    # Create folder if not exists
+    upload_folder = os.path.join("static", "resumes")
+    os.makedirs(upload_folder, exist_ok=True)
+
+    # Delete old resume
+    old_resume_url = session.get("resume_url")
+    if old_resume_url:
+        old_resume_path = old_resume_url.lstrip("/")
+        if os.path.exists(old_resume_path):
+            try:
+                os.remove(old_resume_path)
+            except Exception as e:
+                print(f"Failed to delete old resume")
+
+    # Unique filename per user
+    saved_filename = f"user_{session['user_id']}.{ext}"
+    file_path = os.path.join(upload_folder, saved_filename)
+
+    # Save file
+    file.save(file_path)
+
+    # Save path in DB
+    resume_url = f"/static/resumes/{saved_filename}"
+    database.update_resume(session["user_id"], resume_url)
+
+    # Update session
+    session["resume_url"] = resume_url
+
+    return redirect("/profile?resume=success")
+
+
+@app.route("/api/job_applicants/<int:job_id>")
+def job_applicants(job_id):
+    if "user_id" not in session:
+        return jsonify({"error": "Not logged in"}), 403
+
+    if session.get("user_type") != "recruiter":
+        return jsonify({"error": "Only recruiters allowed"}), 403
+
+    applicants = database.get_job_applicants(job_id)
+    return jsonify({"success": True, "applicants": applicants})
 
 
 if __name__ == "__main__":
